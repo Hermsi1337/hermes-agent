@@ -49,12 +49,20 @@ class TestPortalEnvOverrideHelper:
         """The whole point: an env-set staging host is NOT in
         _NOUS_PORTAL_ALLOWED_HOSTS, and the helper must return it anyway —
         gating happens only for network-provenance values."""
+        # A host deliberately NOT in the allowlist: the property under test is
+        # that env provenance bypasses gating entirely. (Staging itself is now
+        # allowlisted as a first-party host — the allowlist also re-validates
+        # PERSISTED state, so keeping staging out would make a stored staging
+        # portal_base_url silently fall back to prod on the next run.)
         monkeypatch.setenv(
-            "HERMES_PORTAL_BASE_URL", "https://portal.staging-nousresearch.com"
+            "HERMES_PORTAL_BASE_URL", "https://portal.preview-example-nousresearch.com"
         )
-        assert "portal.staging-nousresearch.com" not in _NOUS_PORTAL_ALLOWED_HOSTS
         assert (
-            _nous_portal_env_override() == "https://portal.staging-nousresearch.com"
+            "portal.preview-example-nousresearch.com" not in _NOUS_PORTAL_ALLOWED_HOSTS
+        )
+        assert (
+            _nous_portal_env_override()
+            == "https://portal.preview-example-nousresearch.com"
         )
 
 
@@ -85,7 +93,6 @@ class TestResolveAccessTokenEnvOverrideWins:
         return auth_file
 
     def _run_and_capture(self, monkeypatch, auth):
-        import hermes_cli.auth_nous as auth_nous
         seen_portal_urls = []
 
         # The resolve memo is module-level state; clear it so each test's
@@ -102,7 +109,6 @@ class TestResolveAccessTokenEnvOverrideWins:
             }
 
         monkeypatch.setattr(auth, "_refresh_access_token", _fake_refresh)
-        monkeypatch.setattr(auth_nous, "_refresh_access_token", _fake_refresh)
 
         caplog_records = []
         logger = logging.getLogger("hermes_cli.auth")

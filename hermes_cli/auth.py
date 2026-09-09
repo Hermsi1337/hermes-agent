@@ -1536,7 +1536,12 @@ def _optional_base_url(value: Any) -> Optional[str]:
 # Valid Nous Portal hosts; a stored portal_base_url outside this set is a misconfiguration and falls
 # back to the default. localhost / 127.0.0.1 are for local development and testing.
 _NOUS_PORTAL_ALLOWED_HOSTS: FrozenSet[str] = frozenset({
-    "portal.nousresearch.com", "localhost", "127.0.0.1"})
+    "portal.nousresearch.com",
+    # First-party staging portal: same trust owner as prod, needed to sign the
+    # agent into the staging stack. The allowlist exists to reject look-alike
+    # hosts, not our own environments.
+    "portal.staging-nousresearch.com",
+    "localhost", "127.0.0.1"})
 
 # Per-process memo for resolve_nous_access_token: startup runs one check_fn per managed tool and
 # each would trigger its own ~15s blocking refresh of an expired token; a short-TTL memo collapses
